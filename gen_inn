@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION gen_inn()
+CREATE OR REPLACE FUNCTION public.gen_inn(integer DEFAULT 2)
   RETURNS character varying AS
 $BODY$select 
 string_agg(n::character,'')
@@ -15,9 +15,16 @@ from (
 	,(lead(p,1+t) over ())::int + 1 k1
 	,t
 	from regexp_split_to_table('26139248357',E'\\s*') p,
-	(select (floor(random()*2))::int t) t
+	(select coalesce(nullif($1,2),(floor(random()*2))::int) t) t
 ) q1
 group by t$BODY$
-  LANGUAGE sql VOLATILE;
+  LANGUAGE sql VOLATILE
+  COST 100;
+ALTER FUNCTION public.gen_inn(integer)
+  OWNER TO postgres;
+COMMENT ON FUNCTION public.gen_inn(integer) IS 'Генерирует случайное тестовое значение ИНН 10 или 12 знаков
 
-COMMENT ON FUNCTION gen_inn() IS 'Генерирует случайное тестовое значение ИНН 10 или 12 знаков';
+Параметр:
+0 - возвращет ИНН 12 знаков
+1 - возвращает ИНН 10 знаков
+2, без параметра или null - возвращает ИНН 10 или 12 знаков случайным образом';
