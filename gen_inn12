@@ -1,0 +1,16 @@
+CREATE OR REPLACE FUNCTION gen_inn12()
+  RETURNS character varying AS
+$BODY$select 
+string_agg(n::character varying,'')
+|| mod(mod(sum(n*k1), 11),10)
+|| mod(mod(sum(n*k2) + (mod(mod(sum(n*k1), 11),10) * 8), 11),10)
+from (
+	select 
+	case when lead(p) over () is null then null else (floor(random()*10))::int end n
+	,p::int + 1  k2
+	,(lead(p) over ())::int + 1 k1
+	from regexp_split_to_table('26139248357',E'\\s*') p
+) q$BODY$
+  LANGUAGE sql VOLATILE;
+
+COMMENT ON FUNCTION gen_inn12() IS 'Генерирует случайное тестовое значение ИНН 12 знаков';
